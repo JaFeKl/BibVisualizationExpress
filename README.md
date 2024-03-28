@@ -5,8 +5,10 @@
 # BibVisualizationExpress
 
 
-BibVisualizationExpress is a small Python library for quick visualizing bibliographic data. 
-It is build on top of [pybliometrics](https://github.com/pybliometrics-dev/pybliometrics), a Scopus API for python.  
+BibVisualizationExpress is a small Python library for quick visualizing bibliographic data.
+The library uses .csv data which can either be provided by file
+or directly crawled from scopus by using [pybliometrics](https://github.com/pybliometrics-dev/pybliometrics), a Scopus API for python.  
+
 Currently this library provides three functions for visualization:
 
 `plot_records_over_time()` 
@@ -22,7 +24,12 @@ Currently this library provides three functions for visualization:
 
 <img src="images/example_keyword_worldcloud.png" alt="KeywordWorldcloud" width="300" height="300">
 
-
+## Install
+Easiest to install all dependencies is using conda:
+``` 
+conda env create -f environment.yml  
+conda activate bibvis
+```
 
 ## Usage
 Check out the [example notebook](examples/generate_figures.ipynb), which gives a good overview.

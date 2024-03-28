@@ -1,0 +1,22 @@
+name: bibvis  # Name of your Conda environment
+
+channels:
+  - defaults  # You can specify additional channels if needed
+
+dependencies:
+  - python=3.8   # Define the Python version
+
+  # Include the environment.yml file from cartography
+  - name: other_env_name
+    prefix: /path/to/installation/directory
+    channels:
+      - defaults
+    dependencies:
+      - https://raw.githubusercontent.com/SciTools/cartopy/main/environment.yml
+
+  - Cartopy>=0.21.1
+  - matplotlib>=3.6.0
+  - numpy>=1.22.1
+  - pandas>=1.5.1
+  - pybliometrics>=3.5.2
+  - wordcloud>=1.8.0
