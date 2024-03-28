@@ -36,6 +36,7 @@ jobs:
         cd cartopy
         conda env update --name myenv --file environment.yml
         conda info
+        conda list
         # cd
         # if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Lint with flake8
