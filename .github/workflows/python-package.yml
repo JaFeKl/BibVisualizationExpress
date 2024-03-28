@@ -32,13 +32,8 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest
-        git clone https://github.com/SciTools/cartopy.git
-        cd cartopy
-        conda env update --name myenv --file environment.yml
-        conda info
+        conda env update --name myenv --file https://raw.githubusercontent.com/SciTools/cartopy/main/environment.yml
         conda list
-        rm -r cartopy
-        cd ..
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         conda list
     - name: Lint with flake8
