@@ -37,6 +37,7 @@ jobs:
         conda env update --name myenv --file environment.yml
         conda info
         conda list
+        rm -r cartopy
         cd ..
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         conda list
