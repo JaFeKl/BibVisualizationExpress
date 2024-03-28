@@ -37,8 +37,9 @@ jobs:
         conda env update --name myenv --file environment.yml
         conda info
         conda list
-        # cd
-        # if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        cd ..
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        conda list
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
