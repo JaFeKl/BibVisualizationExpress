@@ -2,16 +2,11 @@ import os
 import numpy as np
 import csv
 import pandas as pd
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
-import cartopy.io.shapereader as shpreader
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from matplotlib.cm import ScalarMappable
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from pybliometrics.scopus import ScopusSearch, AbstractRetrieval
 from timeit import default_timer as timer
-from wordcloud import WordCloud
 
 
 class BibVisualizationExpress():
@@ -38,6 +33,18 @@ class BibVisualizationExpress():
         self.csv_dir = os.path.join(self.pkg_path, "csv")
         self.cmap = cmap
         self.country_dict = self._load_country_dict()
+        self.scopus = self._scopus_config_exists()
+
+    def _scopus_config_exists(self):
+        try:
+            import pybliometrics
+            os.path.exists(pybliometrics.scopus.utils.constants.CONFIG_FILE)
+            print("Scoups config exists")
+        except (RuntimeError, EOFError, OSError):
+            print("No scopus config file set-up... try to do this separately "
+                  "using the documntation here: https://pybliometrics.readthedocs.io/en/stable/configuration.html")
+            return False
+        return True
 
     def _load_country_dict(self):
         """
@@ -50,7 +57,6 @@ class BibVisualizationExpress():
         - dict: A dictionary mapping country names to ISO 3166-1 alpha-3 country codes.
         """
         dic = {}
-        print(os.path.join(self.module_path, "wikipedia-iso-country-codes.csv"))
         with open(os.path.join(self.module_path, "wikipedia-iso-country-codes.csv")) as f:
             file = csv.DictReader(f, delimiter=',')
             for line in file:
@@ -100,6 +106,7 @@ class BibVisualizationExpress():
         - pd.DataFrame: A DataFrame containing the search results retrieved from Scopus.
 
         """
+        from pybliometrics.scopus import ScopusSearch
         start = timer()
         s = ScopusSearch(query)
         self.df = pd.DataFrame(pd.DataFrame(s.results))
@@ -178,6 +185,7 @@ class BibVisualizationExpress():
         - str: The language of the record identified by the electronic identifier (eid).
 
         """
+        from pybliometrics.scopus import AbstractRetrieval
         abs = AbstractRetrieval(eid, view='FULL')
         return abs.language
 
@@ -283,12 +291,19 @@ class BibVisualizationExpress():
         pub_df = pd.DataFrame(index=expanded_year_list, columns=['Journals', 'Conference Proceedings', 'Others', 'Total'])
 
         for year in expanded_year_list:
-            journal_counts = self.df[(self.df['year'] == year) &
-                                     (self.df['aggregationType'] == 'Journal')]['year'].value_counts().get(year, 0)
-            conference_counts = self.df[(self.df['year'] == year) &
-                                        (self.df['aggregationType'] == 'Conference Proceeding')]['year'].value_counts().get(year, 0)
-            other_counts = self.df[(self.df['year'] == year) &
-                                   (~self.df['aggregationType'].isin(['Journal', 'Conference Proceeding']))]['year'].value_counts().get(year, 0)
+            journal_counts = (
+                self.df[(self.df['year'] == year) &
+                        (self.df['aggregationType'] == 'Journal')]['year'].value_counts().get(year, 0)
+            )
+            conference_counts = (
+                self.df[(self.df['year'] == year) &
+                        (self.df['aggregationType'] == 'Conference Proceeding')]['year'].value_counts().get(year, 0)
+            )
+            other_counts = (
+                self.df[(self.df['year'] == year) &
+                        (~self.df['aggregationType'].isin(['Journal', 'Conference Proceeding']))
+                        ]['year'].value_counts().get(year, 0)
+            )
             pub_df.at[year, 'Journals'] = journal_counts
             pub_df.at[year, 'Conference Proceedings'] = conference_counts
             pub_df.at[year, 'Others'] = other_counts
@@ -297,13 +312,29 @@ class BibVisualizationExpress():
 
     def plot_keyword_worldcloud(self, width: float = 5.5, height: float = 5.5,
                                 max_words: int = 20, min_font_size: int = 4, max_font_size: int = None):
+        """
+        Generate a word cloud based on the frequency of keywords in the DataFrame.
+
+        Parameters:
+        - width (float): Width of the plot in inches. Default is 5.5 inches.
+        - height (float): Height of the plot in inches. Default is 5.5 inches.
+        - max_words (int): Maximum number of words to include in the word cloud. Default is 20.
+        - min_font_size (int): Minimum font size of words in the word cloud. Default is 4.
+        - max_font_size (int, optional): Maximum font size of words in the word cloud. Default is None.
+
+        Note:
+        - Requires the 'wordcloud' package to be installed.
+        - The 'authkeywords' column in the DataFrame is expected to contain keyword strings separated by '|'.
+        - Uses a color gradient based on the frequency of each keyword.
+        """
+        from wordcloud import WordCloud
         fig = plt.figure(figsize=(width, height), constrained_layout=False)
         wcloud_width = int(width/5 * 900)
         wcloud_height = int(height/5 * 900)
         ax = fig.add_subplot()
         all_keywords = []
         for row in self.df['authkeywords']:
-            if row is not None:
+            if row is not None and not pd.isna(row):
                 keywords = [keyword.strip().replace(' ', '_').lower() for keyword in row.split('|')]
                 all_keywords.extend(keywords)
 
@@ -348,6 +379,9 @@ class BibVisualizationExpress():
         - plot_title (str, optional): Title for the plot. Defaults to None.
 
         """
+        import cartopy.crs as ccrs
+        import cartopy.feature as cfeature
+        import cartopy.io.shapereader as shpreader
         fig = plt.figure(figsize=(7.5, 7.5), constrained_layout=False)
         if country_counts is None:
             country_counts = self._get_records_count_per_country()
